@@ -1,36 +1,33 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# DevRoast
 
-## Getting Started
+> Seu código merece ser julgado. Brutalmente.
 
-First, run the development server:
+DevRoast é uma plataforma de code review sarcástica que avalia código de forma implacável. Esqueça reviews gentis – aqui é roast mode ou nada.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Funcionalidades
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- **Submissão de Código** - Cole seu código e receba uma nota brutal
+- **Roast Mode** - Ative o modo sarcástico para reviews ainda mais picantes
+- **Shame Leaderboard** - Veja os códigos mais vergonhosos ranqueados por nota
+- **Syntax Highlighting** - Código colorizado com tema dedicado
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Como Usar
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. Acesse a aplicação
+2. Cole seu código no editor
+3. Ative o roast mode se quiser mais intensidade
+4. Clique em `$ roast_my_code`
+5. Receba sua nota e vergonha pública
 
-## Learn More
+## Tecnologias
 
-To learn more about Next.js, take a look at the following resources:
+Construído durante o **NLW da Rocketseat** com:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- Next.js
+- React
+- Tailwind CSS
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+*Seu código nunca mais será o mesmo.*
+# devroast
