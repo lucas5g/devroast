@@ -1,7 +1,14 @@
 import { sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
-import { codeSubmissions, roastIssues, roastFixes, roasts } from "@/db/schema";
+import {
+	codeSubmissions,
+	leaderboardEntries,
+	roastFixes,
+	roastIssues,
+	roasts,
+} from "@/db/schema";
+import { generateRoast } from "@/lib/llm";
 import { baseProcedure, createTRPCRouter } from "../init";
 
 export const appRouter = createTRPCRouter({
@@ -25,6 +32,132 @@ export const appRouter = createTRPCRouter({
 		}
 	}),
 
+	leaderboard: baseProcedure.query(async () => {
+		try {
+			const [entriesResult, countResult] = await Promise.all([
+				db
+					.select({
+						rank: leaderboardEntries.rank,
+						score: leaderboardEntries.score,
+						language: leaderboardEntries.language,
+						code: leaderboardEntries.codePreview,
+						createdAt: leaderboardEntries.createdAt,
+					})
+					.from(leaderboardEntries)
+					.orderBy(leaderboardEntries.rank)
+					.limit(10),
+				db
+					.select({
+						count: sql`count(*)`,
+					})
+					.from(leaderboardEntries),
+			]);
+
+			const entries = entriesResult.map((e) => ({
+				...e,
+				score: Number(e.score),
+				createdAt: e.createdAt?.toISOString() ?? new Date().toISOString(),
+			}));
+			const totalCount = Number(countResult[0]?.count ?? 0);
+
+			return { entries, totalCount };
+		} catch {
+			return { entries: [], totalCount: 0 };
+		}
+	}),
+
+	getRoast: baseProcedure
+		.input(z.object({ id: z.string().uuid() }))
+		.query(async ({ input }) => {
+			try {
+				const [roastResult] = await db
+					.select({
+						id: roasts.id,
+						score: roasts.score,
+						roastText: roasts.roastText,
+						verdict: roasts.verdict,
+						language: roasts.language,
+						code: roasts.code,
+						roastMode: roasts.roastMode,
+						createdAt: roasts.createdAt,
+					})
+					.from(roasts)
+					.where(sql`${roasts.id} = ${input.id}`);
+
+				if (!roastResult) {
+					return null;
+				}
+
+				const issues = await db
+					.select({
+						type: roastIssues.type,
+						title: roastIssues.title,
+						description: roastIssues.description,
+					})
+					.from(roastIssues)
+					.where(sql`${roastIssues.roastId} = ${input.id}`);
+
+				const [fixResult] = await db
+					.select({
+						diff: roastFixes.diff,
+					})
+					.from(roastFixes)
+					.where(sql`${roastFixes.roastId} = ${input.id}`);
+
+				const lines = roastResult.code.split("\n").length;
+
+				return {
+					id: roastResult.id,
+					score: Number(roastResult.score),
+					verdict: roastResult.verdict,
+					roastTitle: roastResult.roastText,
+					language: roastResult.language,
+					lines,
+					code: roastResult.code,
+					issues: issues.map((i) => ({
+						type: i.type,
+						title: i.title,
+						description: i.description,
+					})),
+					fix: fixResult?.diff ?? "",
+				};
+			} catch {
+				return null;
+			}
+		}),
+
+	shameLeaderboard: baseProcedure.query(async () => {
+		try {
+			const [entriesResult, countResult] = await Promise.all([
+				db
+					.select({
+						rank: leaderboardEntries.rank,
+						score: leaderboardEntries.score,
+						language: leaderboardEntries.language,
+						code: leaderboardEntries.codePreview,
+					})
+					.from(leaderboardEntries)
+					.orderBy(sql`${leaderboardEntries.score} DESC`)
+					.limit(3),
+				db
+					.select({
+						count: sql`count(*)`,
+					})
+					.from(leaderboardEntries),
+			]);
+
+			const entries = entriesResult.map((e) => ({
+				...e,
+				score: Number(e.score),
+			}));
+			const totalCount = Number(countResult[0]?.count ?? 0);
+
+			return { entries, totalCount };
+		} catch {
+			return { entries: [], totalCount: 0 };
+		}
+	}),
+
 	createRoast: baseProcedure
 		.input(
 			z.object({
@@ -38,25 +171,13 @@ export const appRouter = createTRPCRouter({
 
 			const detectedLanguage = language || "plaintext";
 
-			const mockLLMResponse = {
-				score: 5.5,
-				verdict: "needs_help",
-				roastTitle:
-					'"Este código precisa de ajuda... mas todo mundo começa de algum lugar."',
-				issues: [
-					{
-						type: "warning",
-						title: "Falta validação",
-						description: "O código não valida inputs.",
-					},
-					{
-						type: "good",
-						title: "Boa nomenclatura",
-						description: "Nomes claros e descritivos.",
-					},
-				],
-				fix: `+function validateInput(input) {\n+  if (!input) throw new Error('invalid');\n+  return input;\n+}\n-return input;`,
-			};
+			let llmResponse: Awaited<ReturnType<typeof generateRoast>>;
+			try {
+				llmResponse = await generateRoast(code, detectedLanguage, roastMode);
+			} catch (error) {
+				console.error("LLM error:", error);
+				throw new Error("Failed to generate roast");
+			}
 
 			const [submission] = await db
 				.insert(codeSubmissions)
@@ -74,13 +195,13 @@ export const appRouter = createTRPCRouter({
 					code,
 					language: detectedLanguage,
 					roastMode,
-					score: mockLLMResponse.score.toString(),
-					roastText: mockLLMResponse.roastTitle,
-					verdict: mockLLMResponse.verdict,
+					score: llmResponse.score.toString(),
+					roastText: llmResponse.roastTitle,
+					verdict: llmResponse.verdict,
 				})
 				.returning();
 
-			for (const issue of mockLLMResponse.issues) {
+			for (const issue of llmResponse.issues) {
 				await db.insert(roastIssues).values({
 					roastId: roast.id,
 					type: issue.type,
@@ -91,7 +212,7 @@ export const appRouter = createTRPCRouter({
 
 			await db.insert(roastFixes).values({
 				roastId: roast.id,
-				diff: mockLLMResponse.fix,
+				diff: llmResponse.fix,
 			});
 
 			return {
@@ -99,11 +220,11 @@ export const appRouter = createTRPCRouter({
 				code,
 				language: detectedLanguage,
 				roastMode,
-				score: mockLLMResponse.score,
-				verdict: mockLLMResponse.verdict,
-				roastTitle: mockLLMResponse.roastTitle,
-				issues: mockLLMResponse.issues,
-				fix: mockLLMResponse.fix,
+				score: llmResponse.score,
+				verdict: llmResponse.verdict,
+				roastTitle: llmResponse.roastTitle,
+				issues: llmResponse.issues,
+				fix: llmResponse.fix,
 			};
 		}),
 });

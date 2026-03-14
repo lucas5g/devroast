@@ -25,8 +25,7 @@ export const users = pgTable("users", {
 
 export const codeSubmissions = pgTable("code_submissions", {
 	id: uuid("id").default(sql`gen_random_uuid()`).primaryKey(),
-	userId: uuid("user_id")
-		.references(() => users.id, { onDelete: "cascade" }),
+	userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }),
 	code: text("code").notNull(),
 	language: varchar("language", { length: 20 }).notNull(),
 	isAnonymous: boolean("is_anonymous").default(true),

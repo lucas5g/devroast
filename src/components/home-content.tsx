@@ -1,17 +1,17 @@
 "use client";
 
+import { useMutation } from "@tanstack/react-query";
 import Link from "next/link";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
 import { CodeEditor } from "@/components/code-editor";
 import { Metrics } from "@/components/metrics";
 import { MetricsSkeleton } from "@/components/metrics-skeleton";
 import { Button } from "@/components/ui/button";
+import { ScoreRing } from "@/components/ui/score-ring";
 import { TableRow } from "@/components/ui/table-row";
 import { Toggle } from "@/components/ui/toggle";
 import { useTRPC } from "@/trpc/client";
-import { ScoreRing } from "@/components/ui/score-ring";
-import { useMutation } from "@tanstack/react-query";
-import { Suspense } from "react";
 
 type RoastResult = {
 	id: string;
@@ -37,6 +37,7 @@ export function HomeContent() {
 	const [roastMode, setRoastMode] = useState<"normal" | "spicy">("normal");
 	const [result, setResult] = useState<RoastResult | null>(null);
 	const [error, setError] = useState<string | null>(null);
+	const router = useRouter();
 
 	const mutationOptions = trpc.createRoast.mutationOptions();
 	const createRoastMutation = useMutation(mutationOptions);
@@ -61,7 +62,7 @@ export function HomeContent() {
 				language: language || undefined,
 				roastMode,
 			});
-			setResult(roastResult);
+			router.push(`/roast/${roastResult.id}`);
 		} catch (err) {
 			setError(err instanceof Error ? err.message : "Erro ao processar");
 		}
@@ -122,10 +123,7 @@ export function HomeContent() {
 				)}
 
 				{result && (
-					<RoastResultComponent
-						result={result}
-						submittedCode={code}
-					/>
+					<RoastResultComponent result={result} submittedCode={code} />
 				)}
 
 				<Suspense fallback={<MetricsSkeleton />}>
@@ -368,9 +366,7 @@ function DiffDisplay({ diff }: { diff: string }) {
 								<>
 									<span
 										className={`mr-3 font-medium ${
-											isAdd
-												? "text-accent-green"
-												: "text-accent-red"
+											isAdd ? "text-accent-green" : "text-accent-red"
 										}`}
 									>
 										{isAdd ? "+" : "-"}

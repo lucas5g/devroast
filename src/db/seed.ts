@@ -156,12 +156,16 @@ async function seed() {
 	console.log(`Created ${submissions.length} code submissions`);
 
 	console.log("Creating roasts...");
+	const verdicts = ["excellent", "good", "needs_help", "critical"];
 	const roastData = submissions.map((sub) => {
 		const mode = Math.random() > 0.5 ? "normal" : "spicy";
 		return {
 			submissionId: sub.id,
+			code: sub.code,
+			language: sub.language,
 			score: (Math.random() * 10).toFixed(1),
 			roastText: getRandomElement(roastMessages[mode]),
+			verdict: getRandomElement(verdicts),
 			roastMode: mode as "normal" | "spicy",
 		};
 	});

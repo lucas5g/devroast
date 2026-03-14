@@ -1,8 +1,10 @@
-import Link from "next/link";
+import { createCaller } from "@/trpc/server";
 
 export async function generateStaticParams() {
 	return [{ id: "550e8400-e29b-41d4-a716-446655440000" }];
 }
+
+export const dynamic = "force-dynamic";
 
 export const metadata = {
 	title: "Roast Result | DevRoast",
@@ -76,6 +78,9 @@ export default async function RoastResultPage({
 	params: Promise<{ id: string }>;
 }) {
 	const { id } = await params;
+	const caller = await createCaller();
+	const roast = await caller.getRoast({ id });
+	const data = roast || STATIC_ROAST_DATA;
 
 	return (
 		<main className="flex min-h-[calc(100vh-3.5rem)] flex-col items-center bg-bg-page">
@@ -86,7 +91,7 @@ export default async function RoastResultPage({
 					<div className="relative flex h-[180px] w-[180px] items-center justify-center rounded-full border-4 border-border-primary">
 						<div className="absolute inset-0 rounded-full border-4 border-transparent bg-[conic-gradient(from_0deg,#EF4444_0%,#F59E0B_35%,#10B981_35%,#10B981_100%)] opacity-50" />
 						<span className="font-[family-name:var(--font-jetbrains-mono)] text-[48px] font-bold text-accent-amber">
-							{STATIC_ROAST_DATA.score}
+							{data.score}
 						</span>
 						<span className="absolute bottom-8 font-[family-name:var(--font-jetbrains-mono)] text-sm text-text-tertiary">
 							/10
@@ -98,21 +103,21 @@ export default async function RoastResultPage({
 						<div className="flex items-center gap-2">
 							<span className="h-2 w-2 rounded-full bg-accent-red" />
 							<span className="font-[family-name:var(--font-jetbrains-mono)] text-sm font-medium text-accent-red">
-								verdict: {STATIC_ROAST_DATA.verdict}
+								verdict: {data.verdict}
 							</span>
 						</div>
 						<p className="font-[family-name:var(--font-ibm-plex-mono)] text-xl leading-relaxed text-text-primary">
-							{STATIC_ROAST_DATA.roastTitle}
+							{data.roastTitle}
 						</p>
 						<div className="flex items-center gap-4">
 							<span className="font-[family-name:var(--font-jetbrains-mono)] text-xs text-text-tertiary">
-								lang: {STATIC_ROAST_DATA.language}
+								lang: {data.language}
 							</span>
 							<span className="font-[family-name:var(--font-jetbrains-mono)] text-xs text-text-tertiary">
 								·
 							</span>
 							<span className="font-[family-name:var(--font-jetbrains-mono)] text-xs text-text-tertiary">
-								{STATIC_ROAST_DATA.lines} lines
+								{data.lines} lines
 							</span>
 						</div>
 						<div className="flex items-center gap-3 pt-2">
@@ -141,7 +146,7 @@ export default async function RoastResultPage({
 					</div>
 
 					<div className="flex h-[300px] overflow-hidden rounded border border-border-primary bg-bg-input">
-						<CodeBlock code={STATIC_ROAST_DATA.code} />
+						<CodeBlock code={data.code} />
 					</div>
 				</section>
 
@@ -160,8 +165,8 @@ export default async function RoastResultPage({
 					</div>
 
 					<div className="grid grid-cols-2 gap-5">
-						{STATIC_ROAST_DATA.issues.map((issue, i) => (
-							<IssueCard key={i} issue={issue} />
+						{data.issues.map((issue) => (
+							<IssueCard key={issue.title} issue={issue} />
 						))}
 					</div>
 				</section>
@@ -186,7 +191,7 @@ export default async function RoastResultPage({
 								your_code.ts → improved_code.ts
 							</span>
 						</div>
-						<DiffBlock code={STATIC_ROAST_DATA.fix} />
+						<DiffBlock code={data.fix} />
 					</div>
 				</section>
 			</div>
