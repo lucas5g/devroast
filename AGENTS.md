@@ -4,6 +4,19 @@
 
 Plataforma de code review sarcástica que avalia código de forma implacável.
 
+## Commits
+
+Commits devem ser em português brasileiro, seguindo o padrão conventional commits:
+
+- `feat:` - Nova funcionalidade
+- `fix:` - Correção de bug
+- `chore:` - Tarefas gerais (deps, refactoring sem mudança de comportamento)
+- `docs:` - Documentação
+- `style:` - Estilização
+- `refactor:` - Refatoração
+
+Exemplo: `feat: adicionar integração com LLM para gerar roasts`
+
 ## Stack
 
 - Next.js 16 (App Router)

@@ -1,3 +1,5 @@
+import { createHighlighter } from "shiki";
+import { CodeBlock } from "@/components/ui/code-block";
 import { createCaller } from "@/trpc/server";
 
 export async function generateStaticParams() {
@@ -145,8 +147,12 @@ export default async function RoastResultPage({
 						</span>
 					</div>
 
-					<div className="flex h-[300px] overflow-hidden rounded border border-border-primary bg-bg-input">
-						<CodeBlock code={data.code} />
+					<div className="h-[300px] overflow-hidden rounded border border-border-primary bg-bg-input">
+						<CodeBlock
+							code={data.code}
+							language={data.language}
+							showLineNumbers={true}
+						/>
 					</div>
 				</section>
 
@@ -199,48 +205,27 @@ export default async function RoastResultPage({
 	);
 }
 
-function CodeBlock({ code }: { code: string }) {
-	const lines = code.split("\n");
-
-	return (
-		<>
-			<div className="flex flex-col items-end gap-2 border-r border-border-primary bg-bg-surface px-3 py-3">
-				{lines.map((_, i) => (
-					<span
-						// biome-ignore lint/suspicious/noArrayIndexKey: line numbers are stable
-						key={i}
-						className="font-[family-name:var(--font-jetbrains-mono)] text-xs leading-[18px] text-text-tertiary"
-					>
-						{i + 1}
-					</span>
-				))}
-			</div>
-			<pre className="flex-1 overflow-x-auto p-4 font-[family-name:var(--font-jetbrains-mono)] text-xs leading-[18px] text-text-secondary">
-				<code>{code}</code>
-			</pre>
-		</>
-	);
-}
-
 function IssueCard({
 	issue,
 }: {
-	issue: (typeof STATIC_ROAST_DATA.issues)[number];
+	issue: { type: string; title: string; description: string };
 }) {
-	const colors = {
+	const colors: Record<string, string> = {
 		critical: "bg-accent-red text-accent-red",
 		warning: "bg-accent-amber text-accent-amber",
+		error: "bg-accent-red text-accent-red",
 		good: "bg-accent-green text-accent-green",
 	};
+
+	const colorClass =
+		colors[issue.type] || "bg-text-tertiary text-text-tertiary";
 
 	return (
 		<div className="flex flex-col gap-3 rounded border border-border-primary p-5">
 			<div className="flex items-center gap-2">
+				<span className={`h-2 w-2 rounded-full ${colorClass.split(" ")[0]}`} />
 				<span
-					className={`h-2 w-2 rounded-full ${colors[issue.type as keyof typeof colors].split(" ")[0]}`}
-				/>
-				<span
-					className={`font-[family-name:var(--font-jetbrains-mono)] text-xs font-medium ${colors[issue.type as keyof typeof colors].split(" ")[1]}`}
+					className={`font-[family-name:var(--font-jetbrains-mono)] text-xs font-medium ${colorClass.split(" ")[1]}`}
 				>
 					{issue.type}
 				</span>
