@@ -29,5 +29,4 @@ Construído durante o **NLW da Rocketseat** com:
 
 ---
 
-*Seu código nunca mais será o mesmo.*
-# devroast
+_Seu código nunca mais será o mesmo._

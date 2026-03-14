@@ -15,7 +15,7 @@ import {
 export const roastModeEnum = pgEnum("roast_mode_enum", ["normal", "spicy"]);
 
 export const users = pgTable("users", {
-	id: uuid("id").default(sql`gen_random_uuid()`),
+	id: uuid("id").default(sql`gen_random_uuid()`).primaryKey(),
 	username: varchar("username", { length: 50 }).notNull().unique(),
 	email: varchar("email", { length: 255 }).notNull().unique(),
 	passwordHash: varchar("password_hash", { length: 255 }).notNull(),
@@ -24,7 +24,7 @@ export const users = pgTable("users", {
 });
 
 export const codeSubmissions = pgTable("code_submissions", {
-	id: uuid("id").default(sql`gen_random_uuid()`),
+	id: uuid("id").default(sql`gen_random_uuid()`).primaryKey(),
 	userId: uuid("user_id")
 		.references(() => users.id, { onDelete: "cascade" })
 		.notNull(),
@@ -37,7 +37,7 @@ export const codeSubmissions = pgTable("code_submissions", {
 export const roasts = pgTable(
 	"roasts",
 	{
-		id: uuid("id").default(sql`gen_random_uuid()`),
+		id: uuid("id").default(sql`gen_random_uuid()`).primaryKey(),
 		submissionId: uuid("submission_id")
 			.references(() => codeSubmissions.id, { onDelete: "cascade" })
 			.notNull(),
@@ -54,7 +54,7 @@ export const roasts = pgTable(
 export const leaderboardEntries = pgTable(
 	"leaderboard_entries",
 	{
-		id: uuid("id").default(sql`gen_random_uuid()`),
+		id: uuid("id").default(sql`gen_random_uuid()`).primaryKey(),
 		submissionId: uuid("submission_id")
 			.references(() => codeSubmissions.id, { onDelete: "cascade" })
 			.notNull(),

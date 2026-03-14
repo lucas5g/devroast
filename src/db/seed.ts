@@ -1,5 +1,12 @@
 import { faker } from "@faker-js/faker";
 import { db } from "./index";
+import {
+	codeSubmissions,
+	leaderboardEntries,
+	roastModeEnum,
+	roasts,
+	users,
+} from "./schema";
 
 const roastMessages = {
 	normal: [
@@ -107,111 +114,75 @@ function getRandomElement<T>(arr: T[]): T {
 	return arr[Math.floor(Math.random() * arr.length)] as T;
 }
 
-function escapeSql(str: string): string {
-	return str.replace(/'/g, "''");
-}
-
 async function seed() {
 	console.log("🌱 Starting seed...");
 
 	console.log("Creating users...");
-	const userValues = Array.from({ length: 20 }, () => {
-		const username = faker.internet.userName().replace(/[^a-zA-Z0-9_]/g, "_");
-		return `('${username}', '${faker.internet.email()}', '${faker.string.alphanumeric(60)}', NOW(), NOW())`;
-	}).join(",\n");
+	const createdUsers = await db
+		.insert(users)
+		.values(
+			Array.from({ length: 20 }, () => ({
+				username: faker.internet.username().replace(/[^a-zA-Z0-9_]/g, "_"),
+				email: faker.internet.email(),
+				passwordHash: faker.string.alphanumeric(60),
+			})),
+		)
+		.returning({ id: users.id });
 
-	await db.execute(`
-		INSERT INTO users (username, email, password_hash, created_at, updated_at)
-		VALUES ${userValues}
-	`);
-
-	const userResult = await db.execute("SELECT id FROM users");
-	const userIds = (
-		userResult as unknown as { rows: { id: string }[] }
-	).rows.map((r) => r.id);
-
-	console.log(`Created ${userIds.length} users`);
+	console.log(`Created ${createdUsers.length} users`);
 
 	console.log("Creating code submissions...");
-	const submissionsValues: string[] = [];
-	for (const userId of userIds) {
-		for (let i = 0; i < 5; i++) {
-			const language = getRandomElement(languages);
-			const code = getRandomElement(codeSamples[language]);
-			const isAnonymous = Math.random() > 0.7;
-			const date = faker.date
-				.between({ from: "2024-01-01", to: "2025-03-13" })
-				.toISOString();
-			submissionsValues.push(
-				`('${userId}', '${escapeSql(code)}', '${language}', ${isAnonymous}, '${date}')`,
-			);
-		}
-	}
-
-	await db.execute(`
-		INSERT INTO code_submissions (user_id, code, language, is_anonymous, created_at)
-		VALUES ${submissionsValues.join(",\n")}
-	`);
-
-	const submissionResult = await db.execute(
-		"SELECT id, language, code FROM code_submissions",
-	);
-	const submissions = (
-		submissionResult as unknown as {
-			rows: { id: string; language: string; code: string }[];
-		}
-	).rows.map((r) => ({
-		id: r.id,
-		language: r.language,
-		code: r.code,
-	}));
+	const submissions = await db
+		.insert(codeSubmissions)
+		.values(
+			createdUsers.flatMap((user) =>
+				Array.from({ length: 5 }, () => {
+					const language = getRandomElement(languages);
+					return {
+						userId: user.id,
+						code: getRandomElement(codeSamples[language]),
+						language,
+						isAnonymous: Math.random() > 0.7,
+					};
+				}),
+			),
+		)
+		.returning({
+			id: codeSubmissions.id,
+			language: codeSubmissions.language,
+			code: codeSubmissions.code,
+		});
 
 	console.log(`Created ${submissions.length} code submissions`);
 
 	console.log("Creating roasts...");
-	const roastValues: string[] = [];
-	for (const submission of submissions) {
+	const roastData = submissions.map((sub) => {
 		const mode = Math.random() > 0.5 ? "normal" : "spicy";
-		const score = (Math.random() * 10).toFixed(1);
-		const roastText = escapeSql(getRandomElement(roastMessages[mode]));
-		const date = faker.date
-			.between({ from: "2024-01-01", to: "2025-03-13" })
-			.toISOString();
-		roastValues.push(
-			`('${submission.id}', '${score}', '${roastText}', '${mode}', '${date}')`,
-		);
-	}
+		return {
+			submissionId: sub.id,
+			score: (Math.random() * 10).toFixed(1),
+			roastText: getRandomElement(roastMessages[mode]),
+			roastMode: mode as "normal" | "spicy",
+		};
+	});
+	await db.insert(roasts).values(roastData);
 
-	await db.execute(`
-		INSERT INTO roasts (submission_id, score, roast_text, roast_mode, created_at)
-		VALUES ${roastValues.join(",\n")}
-	`);
-
-	console.log(`Created ${roastValues.length} roasts`);
+	console.log(`Created ${submissions.length} roasts`);
 
 	console.log("Creating leaderboard entries...");
 	const shuffledSubmissions = [...submissions].sort(() => Math.random() - 0.5);
 	const topSubmissions = shuffledSubmissions.slice(0, 100);
 
-	const leaderboardValues: string[] = [];
-	topSubmissions.forEach((sub, idx) => {
-		const rank = idx + 1;
-		const score = Math.min(10 - rank * 0.3 + Math.random(), 10).toFixed(1);
-		const codePreview = escapeSql(sub.code.slice(0, 100));
-		const date = faker.date
-			.between({ from: "2024-01-01", to: "2025-03-13" })
-			.toISOString();
-		leaderboardValues.push(
-			`('${sub.id}', ${rank}, '${score}', '${sub.language}', '${codePreview}', '${date}')`,
-		);
-	});
+	const leaderboardData = topSubmissions.map((sub, idx) => ({
+		submissionId: sub.id,
+		rank: idx + 1,
+		score: Math.min(10 - idx * 0.3 + Math.random(), 10).toFixed(1),
+		language: sub.language,
+		codePreview: sub.code.slice(0, 100),
+	}));
+	await db.insert(leaderboardEntries).values(leaderboardData);
 
-	await db.execute(`
-		INSERT INTO leaderboard_entries (submission_id, rank, score, language, code_preview, created_at)
-		VALUES ${leaderboardValues.join(",\n")}
-	`);
-
-	console.log(`Created ${leaderboardValues.length} leaderboard entries`);
+	console.log(`Created ${topSubmissions.length} leaderboard entries`);
 
 	console.log("✅ Seed completed!");
 }
