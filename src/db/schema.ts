@@ -26,11 +26,10 @@ export const users = pgTable("users", {
 export const codeSubmissions = pgTable("code_submissions", {
 	id: uuid("id").default(sql`gen_random_uuid()`).primaryKey(),
 	userId: uuid("user_id")
-		.references(() => users.id, { onDelete: "cascade" })
-		.notNull(),
+		.references(() => users.id, { onDelete: "cascade" }),
 	code: text("code").notNull(),
 	language: varchar("language", { length: 20 }).notNull(),
-	isAnonymous: boolean("is_anonymous").default(false),
+	isAnonymous: boolean("is_anonymous").default(true),
 	createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -41,15 +40,36 @@ export const roasts = pgTable(
 		submissionId: uuid("submission_id")
 			.references(() => codeSubmissions.id, { onDelete: "cascade" })
 			.notNull(),
-		score: decimal("score", { precision: 3, scale: 1 }).notNull(),
-		roastText: text("roast_text").notNull(),
+		code: text("code").notNull(),
+		language: varchar("language", { length: 20 }).notNull(),
 		roastMode: roastModeEnum("roast_mode").default("normal"),
+		score: decimal("score", { precision: 3, scale: 1 }).notNull(),
+		verdict: varchar("verdict", { length: 50 }).notNull(),
+		roastText: text("roast_text").notNull(),
 		createdAt: timestamp("created_at").defaultNow(),
 	},
 	(table) => ({
 		scoreIdx: index("roasts_score_idx").on(table.score),
 	}),
 );
+
+export const roastIssues = pgTable("roast_issues", {
+	id: uuid("id").default(sql`gen_random_uuid()`).primaryKey(),
+	roastId: uuid("roast_id")
+		.references(() => roasts.id, { onDelete: "cascade" })
+		.notNull(),
+	type: varchar("type", { length: 20 }).notNull(),
+	title: text("title").notNull(),
+	description: text("description").notNull(),
+});
+
+export const roastFixes = pgTable("roast_fixes", {
+	id: uuid("id").default(sql`gen_random_uuid()`).primaryKey(),
+	roastId: uuid("roast_id")
+		.references(() => roasts.id, { onDelete: "cascade" })
+		.notNull(),
+	diff: text("diff").notNull(),
+});
 
 export const leaderboardEntries = pgTable(
 	"leaderboard_entries",
