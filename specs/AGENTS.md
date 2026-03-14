@@ -29,3 +29,6 @@ Cada spec deve ser um arquivo `.md` em `@specs/` com o nome: `<feature>-spec.md`
 2. Revisar com o time
 3. Implementar seguindo o spec
 4. Validar critérios de aceite
+
+## Git
+- Commits em português brasileiro (pt-BR)
