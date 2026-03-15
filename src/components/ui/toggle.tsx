@@ -5,7 +5,7 @@ import { forwardRef } from "react";
 import { tv, type VariantProps } from "tailwind-variants";
 
 const toggle = tv({
-	base: "inline-flex items-center gap-3 font-[family-name:var(--font-jetbrains-mono)] text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-green focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+	base: "inline-flex items-center gap-3 font-[family-name:var(--font-jetbrains-mono)] text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-green focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 cursor-pointer",
 	variants: {
 		variant: {
 			default: "",

@@ -1,5 +1,6 @@
 import { ShareButton } from "@/components/share-button";
 import { CodeBlock } from "@/components/ui/code-block";
+import { ScoreRing } from "@/components/ui/score-ring";
 import { createCaller } from "@/trpc/server";
 
 export async function generateStaticParams() {
@@ -108,15 +109,7 @@ export default async function RoastResultPage({
 				{/* Score Hero */}
 				<section className="flex items-center gap-12">
 					{/* Score Ring */}
-					<div className="relative flex h-[180px] w-[180px] items-center justify-center rounded-full border-4 border-border-primary">
-						<div className="absolute inset-0 rounded-full border-4 border-transparent bg-[conic-gradient(from_0deg,#EF4444_0%,#F59E0B_35%,#10B981_35%,#10B981_100%)] opacity-50" />
-						<span className="font-[family-name:var(--font-jetbrains-mono)] text-[48px] font-bold text-accent-amber">
-							{data.score}
-						</span>
-						<span className="absolute bottom-8 font-[family-name:var(--font-jetbrains-mono)] text-sm text-text-tertiary">
-							/10
-						</span>
-					</div>
+					<ScoreRing score={data.score} />
 
 					{/* Roast Summary */}
 					<div className="flex flex-1 flex-col gap-4">
