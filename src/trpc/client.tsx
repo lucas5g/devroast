@@ -30,18 +30,8 @@ function getUrl() {
 	const vercelUrl =
 		process.env.VERCEL_URL ?? process.env.NEXT_PUBLIC_VERCEL_URL;
 	const base = vercelUrl ? `https://${vercelUrl}` : "http://localhost:3000";
-	const url = `${base}/api/trpc`;
 
-	console.log(
-		"[tRPC] URL:",
-		url,
-		"VERCEL_URL:",
-		process.env.VERCEL_URL,
-		"NEXT_PUBLIC_VERCEL_URL:",
-		process.env.NEXT_PUBLIC_VERCEL_URL,
-	);
-
-	return url;
+	return `${base}/api/trpc`;
 }
 
 export function TRPCReactProvider(
