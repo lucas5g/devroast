@@ -17,6 +17,7 @@ async function getHighlighterInstance() {
 				"python",
 				"rust",
 				"go",
+				"sql",
 			],
 		});
 	}
