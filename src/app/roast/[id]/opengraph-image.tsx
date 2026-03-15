@@ -10,6 +10,18 @@ export const alt = "DevRoast Result";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
+// Cache font buffer outside the request handler for better performance
+let fontBuffer: Buffer | null = null;
+
+async function getFont() {
+	if (!fontBuffer) {
+		fontBuffer = await fs.readFile(
+			path.join(process.cwd(), "public/fonts/JetBrainsMono-Bold.ttf"),
+		);
+	}
+	return fontBuffer;
+}
+
 export default async function Image({
 	params,
 }: {
@@ -20,12 +32,17 @@ export default async function Image({
 
 	if (!roast) return null;
 
-	const fontData = await fs.readFile(
-		path.join(process.cwd(), "public/fonts/JetBrainsMono-Bold.ttf"),
-	);
+	const fontData = await getFont();
 
 	const score = Number(roast.score);
-	const color = score < 4 ? "#ef4444" : score < 7.5 ? "#f59e0b" : "#10b981";
+	// Using hex values from src/app/globals.css @theme
+	const color =
+		score < 4.0
+			? "#ef4444" // accent-red
+			: score < 7.5
+				? "#f59e0b" // accent-amber
+				: "#10b981"; // accent-green
+
 	const lines = roast.code.split("\n").length;
 
 	return new ImageResponse(
@@ -55,7 +72,7 @@ export default async function Image({
 				</span>
 			</div>
 
-			{/* Meta */}
+			{/* Meta Info */}
 			<div tw="text-xl text-[#737373] mb-12">
 				lang: {roast.language} · {lines} lines
 			</div>
