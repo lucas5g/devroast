@@ -1,11 +1,8 @@
+import { notFound } from "next/navigation";
 import { ShareButton } from "@/components/share-button";
 import { CodeBlock } from "@/components/ui/code-block";
 import { ScoreRing } from "@/components/ui/score-ring";
 import { createCaller } from "@/trpc/server";
-
-export async function generateStaticParams() {
-	return [{ id: "550e8400-e29b-41d4-a716-446655440000" }];
-}
 
 export const dynamic = "force-dynamic";
 
@@ -32,67 +29,6 @@ export async function generateMetadata({
 	};
 }
 
-const STATIC_ROAST_DATA = {
-	id: "550e8400-e29b-41d4-a716-446655440000",
-	score: 3.5,
-	verdict: "needs_serious_help",
-	roastTitle:
-		'"this code looks like it was written during a power outage... in 2005."',
-	language: "javascript",
-	lines: 7,
-	code: `function calculateTotal(items) {
-  var total = 0;
-  for (var i = 0; i < items.length; i++) {
-    total = total + items[i].price;
-  }
-  if (total > 100) {
-    console.log("discount applied");
-    total = total * 0.9;
-  }
-  // TODO: handle tax calculation
-  // TODO: handle currency conversion
-  return total;
-}`,
-	issues: [
-		{
-			type: "critical",
-			title: "using var instead of const/let",
-			description:
-				"var is function-scoped and leads to hoisting bugs. use const by default, let when reassignment is needed.",
-		},
-		{
-			type: "warning",
-			title: "imperative loop pattern",
-			description:
-				"for loops are verbose and error-prone. use .reduce() or .map() for cleaner, functional transformations.",
-		},
-		{
-			type: "good",
-			title: "clear naming conventions",
-			description:
-				"calculateTotal and items are descriptive, self-documenting names that communicate intent without comments.",
-		},
-		{
-			type: "good",
-			title: "single responsibility",
-			description:
-				"the function does one thing well — calculates a total. no side effects, no mixed concerns, no hidden complexity.",
-		},
-	],
-	fix: `function calculateTotal(items) {
-+  return items.reduce((sum, item) => sum + item.price, 0);
--   var total = 0;
--   for (var i = 0; i < items.length; i++) {
--     total = total + items[i].price;
--   }
--   if (total > 100) {
--     console.log("discount applied");
--     total = total * 0.9;
--   }
--   return total;
-}`,
-};
-
 export default async function RoastResultPage({
 	params,
 }: {
@@ -101,7 +37,10 @@ export default async function RoastResultPage({
 	const { id } = await params;
 	const caller = await createCaller();
 	const roast = await caller.getRoast({ id });
-	const data = roast || STATIC_ROAST_DATA;
+
+	if (!roast) notFound();
+
+	const data = roast;
 
 	return (
 		<main className="flex min-h-[calc(100vh-3.5rem)] flex-col items-center bg-bg-page">
