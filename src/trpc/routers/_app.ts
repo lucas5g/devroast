@@ -37,24 +37,27 @@ export const appRouter = createTRPCRouter({
 			const [entriesResult, countResult] = await Promise.all([
 				db
 					.select({
-						rank: leaderboardEntries.rank,
-						score: leaderboardEntries.score,
-						language: leaderboardEntries.language,
-						code: leaderboardEntries.codePreview,
-						createdAt: leaderboardEntries.createdAt,
+						rank: sql`row_number() over (order by ${roasts.score} desc)`.as(
+							"rank",
+						),
+						score: roasts.score,
+						language: roasts.language,
+						code: roasts.code,
+						createdAt: roasts.createdAt,
 					})
-					.from(leaderboardEntries)
-					.orderBy(leaderboardEntries.rank)
+					.from(roasts)
+					.orderBy(sql`${roasts.score} desc`)
 					.limit(10),
 				db
 					.select({
 						count: sql`count(*)`,
 					})
-					.from(leaderboardEntries),
+					.from(roasts),
 			]);
 
-			const entries = entriesResult.map((e) => ({
+			const entries = entriesResult.map((e, idx) => ({
 				...e,
+				rank: idx + 1,
 				score: Number(e.score),
 				createdAt: e.createdAt?.toISOString() ?? new Date().toISOString(),
 			}));
