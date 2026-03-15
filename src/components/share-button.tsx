@@ -9,27 +9,51 @@ interface ShareButtonProps {
 
 export function ShareButton({ roastId }: ShareButtonProps) {
 	const [copied, setCopied] = useState(false);
+	const [sharing, setSharing] = useState(false);
 
 	const handleShare = async () => {
 		const shareUrl = `${window.location.origin}/roast/${roastId}`;
+		const imageUrl = `${shareUrl}/opengraph-image`;
 
 		if (navigator.share) {
+			setSharing(true);
 			try {
+				// Fetch the actual OG image file
+				const response = await fetch(imageUrl);
+				const blob = await response.blob();
+				const file = new File([blob], `roast-${roastId}.png`, {
+					type: "image/png",
+				});
+
+				// Check if sharing files is supported
+				if (navigator.canShare && navigator.canShare({ files: [file] })) {
+					await navigator.share({
+						title: "DevRoast Result",
+						text: "Veja o roast do meu código!",
+						url: shareUrl,
+						files: [file],
+					});
+					setSharing(false);
+					return;
+				}
+
+				// Fallback to sharing just the URL if file sharing is not supported
 				await navigator.share({
 					title: "DevRoast Result",
-					text: "Check out my code roast result!",
+					text: "Veja o roast do meu código!",
 					url: shareUrl,
 				});
-				return;
 			} catch (err) {
-				// User might have cancelled or browser doesn't support sharing this specific content
 				if ((err as Error).name !== "AbortError") {
 					console.error("Error sharing:", err);
 				}
+			} finally {
+				setSharing(false);
 			}
+			return;
 		}
 
-		// Fallback to clipboard
+		// Fallback to clipboard (URL) if navigator.share is not available
 		try {
 			await navigator.clipboard.writeText(shareUrl);
 			setCopied(true);
@@ -43,10 +67,36 @@ export function ShareButton({ roastId }: ShareButtonProps) {
 		<Button
 			variant="outline"
 			size="sm"
-			className="flex items-center gap-2"
+			className="flex items-center gap-2 min-w-[120px]"
 			onClick={handleShare}
+			disabled={sharing}
 		>
-			{copied ? (
+			{sharing ? (
+				<>
+					<svg
+						className="animate-spin h-3.5 w-3.5"
+						xmlns="http://www.w3.org/2000/svg"
+						fill="none"
+						viewBox="0 0 24 24"
+					>
+						<title>Loading</title>
+						<circle
+							className="opacity-25"
+							cx="12"
+							cy="12"
+							r="10"
+							stroke="currentColor"
+							strokeWidth="4"
+						/>
+						<path
+							className="opacity-75"
+							fill="currentColor"
+							d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+						/>
+					</svg>
+					<span>sharing...</span>
+				</>
+			) : copied ? (
 				<>
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
