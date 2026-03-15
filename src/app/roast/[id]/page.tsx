@@ -1,3 +1,4 @@
+import { ShareButton } from "@/components/share-button";
 import { CodeBlock } from "@/components/ui/code-block";
 import { createCaller } from "@/trpc/server";
 
@@ -140,12 +141,7 @@ export default async function RoastResultPage({
 							</span>
 						</div>
 						<div className="flex items-center gap-3 pt-2">
-							<button
-								type="button"
-								className="flex items-center gap-1.5 rounded border border-border-primary px-4 py-2 font-[family-name:var(--font-jetbrains-mono)] text-xs text-text-primary transition-colors hover:bg-bg-hover"
-							>
-								share_roast
-							</button>
+							<ShareButton roastId={data.id} />
 						</div>
 					</div>
 				</section>
