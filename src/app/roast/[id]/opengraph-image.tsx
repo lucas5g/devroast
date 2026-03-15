@@ -8,23 +8,6 @@ export const alt = "DevRoast Result";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-const FONT_URL =
-	"https://fonts.gstatic.com/s/jetbrainsmono/v18/tDbY2o-flEEny0FZhsfKu5WU4zr3E_BX0PnT8RD8yKxjPVmUsaaDhw.woff2";
-
-let fontBuffer: Uint8Array | null = null;
-
-async function getFont() {
-	if (!fontBuffer) {
-		const response = await fetch(FONT_URL);
-		if (!response.ok) {
-			throw new Error("Failed to fetch font");
-		}
-		const arrayBuffer = await response.arrayBuffer();
-		fontBuffer = new Uint8Array(arrayBuffer);
-	}
-	return fontBuffer;
-}
-
 export default async function Image({
 	params,
 }: {
@@ -35,23 +18,15 @@ export default async function Image({
 
 	if (!roast) return null;
 
-	const fontData = await getFont();
-
 	const score = Number(roast.score);
-	// Using hex values from src/app/globals.css @theme
-	const color =
-		score < 4.0
-			? "#ef4444" // accent-red
-			: score < 7.5
-				? "#f59e0b" // accent-amber
-				: "#10b981"; // accent-green
+	const color = score < 4.0 ? "#ef4444" : score < 7.5 ? "#f59e0b" : "#10b981";
 
 	const lines = roast.code.split("\n").length;
 
 	return new ImageResponse(
 		<div
 			tw="flex flex-col items-center justify-center w-full h-full bg-[#0a0a0a] text-[#fafafa] p-16"
-			style={{ fontFamily: "JetBrains Mono" }}
+			style={{ fontFamily: "monospace" }}
 		>
 			{/* Header */}
 			<div tw="flex items-center gap-2 mb-12">
@@ -93,13 +68,6 @@ export default async function Image({
 		</div>,
 		{
 			...size,
-			fonts: [
-				{
-					name: "JetBrains Mono",
-					data: fontData,
-					style: "normal",
-				},
-			],
 		},
 	);
 }
