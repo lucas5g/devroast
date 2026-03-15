@@ -8,7 +8,8 @@ This specification describes the implementation of dynamic OpenGraph (OG) images
 - **Framework:** Next.js 16 (App Router)
 - **Data Access:** Drizzle ORM (direct database query for performance)
 - **Styling:** Tailwind CSS (via Takumi's `tw` attribute)
-- **Fonts:** JetBrains Mono (monospaced)
+- **Fonts:** JetBrains Mono (monospaced), loaded as a font buffer in `ImageResponse`.
+- **Schema Standards:** New schema modifications must use `.config("column_name")` as per `AGENTS.md`.
 
 ## 3. Design Specification
 Based on the "Screen 4 - OG Image" frame in the project design:
@@ -32,8 +33,9 @@ Based on the "Screen 4 - OG Image" frame in the project design:
 - **Process:**
     1. Extract `id` from URL params.
     2. Query `roasts` table for `score`, `verdict`, `roastText`, `language`, and `code`.
-    3. Map database values to JSX components.
-    4. Return `ImageResponse` with `format: 'png'` or `'webp'`.
+    3. Calculate `<lines>` by splitting `code` by `\n`.
+    4. Map database values to JSX components. `roastText` is used for the "Quote".
+    5. Return `ImageResponse` with `format: 'png'` or `'webp'`.
 
 ## 5. Performance & Error Handling
 - **Caching:** Leverage Next.js built-in OG image caching.
