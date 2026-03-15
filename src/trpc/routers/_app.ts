@@ -1,13 +1,7 @@
 import { sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
-import {
-	codeSubmissions,
-	leaderboardEntries,
-	roastFixes,
-	roastIssues,
-	roasts,
-} from "@/db/schema";
+import { codeSubmissions, roastFixes, roastIssues, roasts } from "@/db/schema";
 import { generateRoast } from "@/lib/llm";
 import { baseProcedure, createTRPCRouter } from "../init";
 
@@ -134,23 +128,26 @@ export const appRouter = createTRPCRouter({
 			const [entriesResult, countResult] = await Promise.all([
 				db
 					.select({
-						rank: leaderboardEntries.rank,
-						score: leaderboardEntries.score,
-						language: leaderboardEntries.language,
-						code: leaderboardEntries.codePreview,
+						rank: sql`row_number() over (order by ${roasts.score} desc)`.as(
+							"rank",
+						),
+						score: roasts.score,
+						language: roasts.language,
+						code: roasts.code,
 					})
-					.from(leaderboardEntries)
-					.orderBy(sql`${leaderboardEntries.score} DESC`)
+					.from(roasts)
+					.orderBy(sql`${roasts.score} desc`)
 					.limit(3),
 				db
 					.select({
 						count: sql`count(*)`,
 					})
-					.from(leaderboardEntries),
+					.from(roasts),
 			]);
 
-			const entries = entriesResult.map((e) => ({
+			const entries = entriesResult.map((e, idx) => ({
 				...e,
+				rank: idx + 1,
 				score: Number(e.score),
 			}));
 			const totalCount = Number(countResult[0]?.count ?? 0);
