@@ -13,27 +13,25 @@ export function ShareButton({ roastId }: ShareButtonProps) {
 
 	const handleShare = async () => {
 		const shareUrl = `${window.location.origin}/roast/${roastId}/opengraph-image`;
-		const imageUrl = shareUrl;
 
 		if (navigator.share) {
 			setSharing(true);
 			try {
 				// Fetch the actual OG image file
-				const response = await fetch(imageUrl);
+				const response = await fetch(shareUrl);
 				const blob = await response.blob();
 				const file = new File([blob], `roast-${roastId}.png`, {
 					type: "image/png",
 				});
 
 				// Check if sharing files is supported
-				if (navigator.canShare && navigator.canShare({ files: [file] })) {
+				if (navigator.canShare?.({ files: [file] })) {
 					await navigator.share({
 						title: "DevRoast Result",
 						text: "Veja o roast do meu código!",
 						url: shareUrl,
 						files: [file],
 					});
-					setSharing(false);
 					return;
 				}
 
