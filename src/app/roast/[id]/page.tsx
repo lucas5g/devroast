@@ -1,4 +1,3 @@
-import { createHighlighter } from "shiki";
 import { CodeBlock } from "@/components/ui/code-block";
 import { createCaller } from "@/trpc/server";
 
@@ -8,10 +7,28 @@ export async function generateStaticParams() {
 
 export const dynamic = "force-dynamic";
 
-export const metadata = {
-	title: "Roast Result | DevRoast",
-	description: "Your code roast result",
-};
+export async function generateMetadata({
+	params,
+}: {
+	params: Promise<{ id: string }>;
+}) {
+	const { id } = await params;
+	const caller = await createCaller();
+	const roast = await caller.getRoast({ id });
+
+	if (!roast) return { title: "Roast Not Found" };
+
+	return {
+		title: `Roast Score: ${roast.score}/10 | DevRoast`,
+		description: roast.roastTitle,
+		openGraph: {
+			title: `Roast Score: ${roast.score}/10 | DevRoast`,
+			description: roast.roastTitle,
+			type: "website",
+			images: [`/roast/${id}/opengraph-image`],
+		},
+	};
+}
 
 const STATIC_ROAST_DATA = {
 	id: "550e8400-e29b-41d4-a716-446655440000",
@@ -248,7 +265,6 @@ function DiffBlock({ code }: { code: string }) {
 			{lines.map((line, i) => {
 				const isAdd = line.startsWith("+");
 				const isRemove = line.startsWith("-");
-				const isContext = !isAdd && !isRemove;
 
 				let bgClass = "transparent";
 				if (isAdd) bgClass = "bg-accent-green/10";
