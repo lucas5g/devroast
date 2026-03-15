@@ -75,7 +75,8 @@ export async function generateRoast(
 				"X-Title": "DevRoast",
 			},
 			body: JSON.stringify({
-				model: "google/gemma-3-4b-it:free",
+				// model: "google/gemma-3-4b-it:free",
+				model: 'google/gemini-2.5-flash-lite',
 				messages: [{ role: "user", content: prompt }],
 			}),
 		},

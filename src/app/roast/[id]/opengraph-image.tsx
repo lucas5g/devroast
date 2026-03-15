@@ -15,9 +15,17 @@ let fontBuffer: Buffer | null = null;
 
 async function getFont() {
 	if (!fontBuffer) {
-		fontBuffer = await fs.readFile(
-			path.join(process.cwd(), "public/fonts/JetBrainsMono-Bold.ttf"),
+		const devPath = path.join(
+			process.cwd(),
+			"public/fonts/JetBrainsMono-Bold.ttf",
 		);
+		const prodPath = "/var/task/public/fonts/JetBrainsMono-Bold.ttf";
+
+		try {
+			fontBuffer = await fs.readFile(devPath);
+		} catch {
+			fontBuffer = await fs.readFile(prodPath);
+		}
 	}
 	return fontBuffer;
 }
