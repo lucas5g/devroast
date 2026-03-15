@@ -12,8 +12,8 @@ export function ShareButton({ roastId }: ShareButtonProps) {
 	const [sharing, setSharing] = useState(false);
 
 	const handleShare = async () => {
-		const shareUrl = `${window.location.origin}/roast/${roastId}`;
-		const imageUrl = `${shareUrl}/opengraph-image`;
+		const shareUrl = `${window.location.origin}/roast/${roastId}/opengraph-image`;
+		const imageUrl = shareUrl;
 
 		if (navigator.share) {
 			setSharing(true);
