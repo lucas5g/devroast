@@ -18,7 +18,7 @@ export function CollapsibleCodeRow({
 	code,
 }: CollapsibleCodeRowProps) {
 	const [isOpen, setIsOpen] = useState(false);
-	const codeLines = code.split("\n");
+	const codeLines = (code ?? "").split("\n");
 	const shouldTruncate = codeLines.length > 3;
 
 	return (
@@ -32,7 +32,7 @@ export function CollapsibleCodeRow({
 						{score.toFixed(1)}
 					</span>
 					<span className="flex-1 font-[family-name:var(--font-jetbrains-mono)] text-xs text-text-tertiary truncate">
-						{shouldTruncate ? codeLines.slice(0, 3).join("\n") : code}
+						{shouldTruncate ? codeLines.slice(0, 3).join("\n") : (code ?? "")}
 					</span>
 					<span className="w-24 text-right font-[family-name:var(--font-jetbrains-mono)] text-xs text-text-tertiary">
 						{language}

@@ -1,4 +1,3 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { z } from "zod";
 
 const RoastResponseSchema = z.object({
@@ -16,8 +15,6 @@ const RoastResponseSchema = z.object({
 });
 
 type RoastResponse = z.infer<typeof RoastResponseSchema>;
-
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY ?? "");
 
 function buildPrompt(
 	code: string,
@@ -65,12 +62,32 @@ export async function generateRoast(
 	language: string,
 	mode: "normal" | "spicy",
 ): Promise<RoastResponse> {
-	const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
-
 	const prompt = buildPrompt(code, language, mode);
 
-	const result = await model.generateContent(prompt);
-	const responseText = result.response.text();
+	const response = await fetch(
+		"https://openrouter.ai/api/v1/chat/completions",
+		{
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+				"HTTP-Referer": "https://devroast.dev",
+				"X-Title": "DevRoast",
+			},
+			body: JSON.stringify({
+				model: "google/gemma-3-4b-it:free",
+				messages: [{ role: "user", content: prompt }],
+			}),
+		},
+	);
+
+	if (!response.ok) {
+		const error = await response.text();
+		throw new Error(`OpenRouter error: ${error}`);
+	}
+
+	const data = await response.json();
+	const responseText = data.choices[0].message.content;
 
 	const jsonMatch = responseText.match(/\{[\s\S]*\}/);
 	if (!jsonMatch) {

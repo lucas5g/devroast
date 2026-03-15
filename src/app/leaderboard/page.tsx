@@ -63,7 +63,7 @@ function LeaderboardEntry({
 		createdAt: string;
 	};
 }) {
-	const lines = entry.code.split("\n");
+	const lines = (entry.code ?? "").split("\n");
 	const date = new Date(entry.createdAt).toISOString().split("T")[0];
 
 	return (
