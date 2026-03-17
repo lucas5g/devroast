@@ -19,6 +19,8 @@ async function getHighlighterInstance() {
 				"go",
 				"sql",
 				"php",
+				"bash",
+				"shell",
 			],
 		});
 	}

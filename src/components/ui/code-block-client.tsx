@@ -28,6 +28,7 @@ function getHighlighterInstance() {
 				"php",
 				"sql",
 				"bash",
+				"shell",
 				"yaml",
 				"xml",
 			],
