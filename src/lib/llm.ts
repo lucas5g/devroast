@@ -16,6 +16,94 @@ const RoastResponseSchema = z.object({
 
 type RoastResponse = z.infer<typeof RoastResponseSchema>;
 
+function extractTextContent(content: unknown): string {
+	if (typeof content === "string") {
+		return content;
+	}
+
+	if (Array.isArray(content)) {
+		return content
+			.map((item) => {
+				if (
+					typeof item === "object" &&
+					item !== null &&
+					"type" in item &&
+					item.type === "text" &&
+					"text" in item &&
+					typeof item.text === "string"
+				) {
+					return item.text;
+				}
+
+				return "";
+			})
+			.join("\n");
+	}
+
+	return "";
+}
+
+function sanitizeJsonString(json: string): string {
+	let result = "";
+	let inString = false;
+	let escaping = false;
+
+	for (const char of json) {
+		if (escaping) {
+			result += char;
+			escaping = false;
+			continue;
+		}
+
+		if (char === "\\") {
+			result += char;
+			escaping = true;
+			continue;
+		}
+
+		if (char === '"') {
+			result += char;
+			inString = !inString;
+			continue;
+		}
+
+		if (inString) {
+			switch (char) {
+				case "\n":
+					result += "\\n";
+					continue;
+				case "\r":
+					result += "\\r";
+					continue;
+				case "\t":
+					result += "\\t";
+					continue;
+				default:
+					if (char < " ") {
+						result += `\\u${char.charCodeAt(0).toString(16).padStart(4, "0")}`;
+						continue;
+					}
+			}
+		}
+
+		result += char;
+	}
+
+	return result;
+}
+
+function parseResponseJson(responseText: string): RoastResponse {
+	const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+	if (!jsonMatch) {
+		throw new Error("Invalid LLM response");
+	}
+
+	const sanitizedJson = sanitizeJsonString(jsonMatch[0]);
+	const parsed = JSON.parse(sanitizedJson);
+
+	return RoastResponseSchema.parse(parsed);
+}
+
 function buildPrompt(
 	code: string,
 	language: string,
@@ -76,8 +164,45 @@ export async function generateRoast(
 			},
 			body: JSON.stringify({
 				// model: "google/gemma-3-4b-it:free",
-				model: 'google/gemini-2.5-flash-lite',
+				model: "google/gemini-2.5-flash-lite",
 				messages: [{ role: "user", content: prompt }],
+				response_format: {
+					type: "json_schema",
+					json_schema: {
+						name: "devroast_response",
+						strict: true,
+						schema: {
+							type: "object",
+							properties: {
+								score: { type: "number" },
+								verdict: {
+									type: "string",
+									enum: ["excellent", "good", "needs_help", "critical"],
+								},
+								roastTitle: { type: "string" },
+								issues: {
+									type: "array",
+									items: {
+										type: "object",
+										properties: {
+											type: {
+												type: "string",
+												enum: ["error", "warning", "good"],
+											},
+											title: { type: "string" },
+											description: { type: "string" },
+										},
+										required: ["type", "title", "description"],
+										additionalProperties: false,
+									},
+								},
+								fix: { type: "string" },
+							},
+							required: ["score", "verdict", "roastTitle", "issues", "fix"],
+							additionalProperties: false,
+						},
+					},
+				},
 			}),
 		},
 	);
@@ -88,13 +213,7 @@ export async function generateRoast(
 	}
 
 	const data = await response.json();
-	const responseText = data.choices[0].message.content;
+	const responseText = extractTextContent(data.choices?.[0]?.message?.content);
 
-	const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-	if (!jsonMatch) {
-		throw new Error("Invalid LLM response");
-	}
-
-	const parsed = JSON.parse(jsonMatch[0]);
-	return RoastResponseSchema.parse(parsed);
+	return parseResponseJson(responseText);
 }
