@@ -18,6 +18,7 @@ async function getHighlighterInstance() {
 				"rust",
 				"go",
 				"sql",
+				"php",
 			],
 		});
 	}
