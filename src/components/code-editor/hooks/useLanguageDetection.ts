@@ -48,6 +48,21 @@ export interface UseLanguageDetectionResult {
 	setLanguage: (language: string) => void;
 }
 
+function calculateConfidence(
+	primaryRelevance: number,
+	secondaryRelevance: number,
+): number {
+	if (primaryRelevance <= 0) {
+		return 0;
+	}
+
+	const absoluteScore = primaryRelevance / (primaryRelevance + 12);
+	const gapScore =
+		(primaryRelevance - secondaryRelevance) / (primaryRelevance + 1);
+
+	return Math.max(0, Math.min(1, absoluteScore * 0.6 + gapScore * 0.4));
+}
+
 export function useLanguageDetection(): UseLanguageDetectionResult {
 	const [language, setLanguageState] = useState<string>("plaintext");
 	const [status, setStatus] = useState<DetectionStatus>("idle");
@@ -67,8 +82,13 @@ export function useLanguageDetection(): UseLanguageDetectionResult {
 			const result = hljs.highlightAuto(code, COMMON_LANGUAGES);
 
 			if (result.language) {
+				const primaryRelevance = result.relevance || 0;
+				const secondaryRelevance = result.secondBest?.relevance || 0;
+
 				setLanguageState(result.language);
-				setConfidence(result.relevance || 0);
+				setConfidence(
+					calculateConfidence(primaryRelevance, secondaryRelevance),
+				);
 				setStatus("detected");
 			} else {
 				setLanguageState("plaintext");
