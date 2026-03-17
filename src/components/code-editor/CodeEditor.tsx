@@ -79,7 +79,7 @@ export function CodeEditor({
 	showLanguageSelector = true,
 	defaultLanguage,
 	height = "400px",
-	maxCharacters = 2000,
+	maxCharacters = 3500,
 }: CodeEditorProps) {
 	const [code, setCode] = useState(initialCode);
 	const [theme, setTheme] = useState<"vs-dark" | "light">("vs-dark");
