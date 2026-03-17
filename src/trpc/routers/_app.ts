@@ -26,44 +26,65 @@ export const appRouter = createTRPCRouter({
 		}
 	}),
 
-	leaderboard: baseProcedure.query(async () => {
-		try {
-			const [entriesResult, countResult] = await Promise.all([
-				db
-					.select({
-						id: roasts.id,
-						rank: sql`row_number() over (order by ${roasts.score} desc)`.as(
-							"rank",
-						),
-						score: roasts.score,
-						language: roasts.language,
-						code: roasts.code,
-						createdAt: roasts.createdAt,
-					})
-					.from(roasts)
-					.orderBy(sql`${roasts.score} desc`)
-					.limit(10),
-				db
-					.select({
-						count: sql`count(*)`,
-					})
-					.from(roasts),
-			]);
+	leaderboard: baseProcedure
+		.input(
+			z
+				.object({
+					page: z.number().int().min(1).default(1),
+					pageSize: z.number().int().min(1).max(100).default(10),
+				})
+				.default({ page: 1, pageSize: 10 }),
+		)
+		.query(async ({ input }) => {
+			try {
+				const page = input.page;
+				const pageSize = input.pageSize;
+				const offset = (page - 1) * pageSize;
 
-			const entries = entriesResult.map((e, idx) => ({
-				...e,
-				rank: idx + 1,
-				score: Number(e.score),
-				code: e.code ?? "",
-				createdAt: e.createdAt?.toISOString() ?? new Date().toISOString(),
-			}));
-			const totalCount = Number(countResult[0]?.count ?? 0);
+				const [entriesResult, countResult] = await Promise.all([
+					db
+						.select({
+							id: roasts.id,
+							rank: sql`row_number() over (order by ${roasts.score} desc)`.as(
+								"rank",
+							),
+							score: roasts.score,
+							language: roasts.language,
+							code: roasts.code,
+							createdAt: roasts.createdAt,
+						})
+						.from(roasts)
+						.orderBy(sql`${roasts.score} desc`)
+						.limit(pageSize)
+						.offset(offset),
+					db
+						.select({
+							count: sql`count(*)`,
+						})
+						.from(roasts),
+				]);
 
-			return { entries, totalCount };
-		} catch {
-			return { entries: [], totalCount: 0 };
-		}
-	}),
+				const entries = entriesResult.map((e, idx) => ({
+					...e,
+					rank: offset + idx + 1,
+					score: Number(e.score),
+					code: e.code ?? "",
+					createdAt: e.createdAt?.toISOString() ?? new Date().toISOString(),
+				}));
+				const totalCount = Number(countResult[0]?.count ?? 0);
+				const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+
+				return { entries, totalCount, page, pageSize, totalPages };
+			} catch {
+				return {
+					entries: [],
+					totalCount: 0,
+					page: 1,
+					pageSize: 10,
+					totalPages: 1,
+				};
+			}
+		}),
 
 	getRoast: baseProcedure
 		.input(z.object({ id: z.string().uuid() }))

@@ -6,12 +6,28 @@ export const metadata = {
 	description: "The most roasted code on the internet",
 };
 
-export default async function LeaderboardPage() {
+const PAGE_SIZE = 10;
+
+function getPageHref(page: number) {
+	return page === 1 ? "/leaderboard" : `/leaderboard?page=${page}`;
+}
+
+export default async function LeaderboardPage({
+	searchParams,
+}: {
+	searchParams: Promise<{ page?: string }>;
+}) {
+	const resolvedSearchParams = await searchParams;
+	const currentPage = Math.max(
+		1,
+		Number.parseInt(resolvedSearchParams.page ?? "1", 10) || 1,
+	);
 	const caller = await createCaller();
-	const [{ entries, totalCount }, metrics] = await Promise.all([
-		caller.leaderboard(),
+	const [{ entries, totalCount, totalPages }, metrics] = await Promise.all([
+		caller.leaderboard({ page: currentPage, pageSize: PAGE_SIZE }),
 		caller.metrics(),
 	]);
+	const safeCurrentPage = Math.min(currentPage, totalPages);
 
 	const avgScore = metrics.avgScore.toFixed(1);
 
@@ -47,6 +63,36 @@ export default async function LeaderboardPage() {
 					{entries.map((entry) => (
 						<LeaderboardEntry key={entry.rank} entry={entry} />
 					))}
+
+					<div className="flex items-center justify-between rounded border border-border-primary bg-bg-input px-4 py-3">
+						<span className="font-[family-name:var(--font-jetbrains-mono)] text-xs text-text-tertiary">
+							page {safeCurrentPage} of {totalPages}
+						</span>
+						<div className="flex items-center gap-3">
+							<Link
+								href={getPageHref(Math.max(1, safeCurrentPage - 1))}
+								aria-disabled={safeCurrentPage === 1}
+								className={`font-[family-name:var(--font-jetbrains-mono)] text-xs transition-colors ${
+									safeCurrentPage === 1
+										? "pointer-events-none text-text-tertiary/40"
+										: "text-text-secondary hover:text-text-primary"
+								}`}
+							>
+								prev
+							</Link>
+							<Link
+								href={getPageHref(Math.min(totalPages, safeCurrentPage + 1))}
+								aria-disabled={safeCurrentPage === totalPages}
+								className={`font-[family-name:var(--font-jetbrains-mono)] text-xs transition-colors ${
+									safeCurrentPage === totalPages
+										? "pointer-events-none text-text-tertiary/40"
+										: "text-accent-green hover:text-text-primary"
+								}`}
+							>
+								next
+							</Link>
+						</div>
+					</div>
 				</section>
 			</div>
 		</main>
