@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createHighlighter, type Highlighter } from "shiki";
+import { twMerge } from "tailwind-merge";
 
 let highlighterPromise: Promise<Highlighter> | null = null;
 
@@ -41,12 +42,14 @@ export interface CodeBlockClientProps {
 	code: string;
 	language?: string;
 	filename?: string;
+	codeAreaClassName?: string;
 }
 
 export function CodeBlockClient({
 	code,
 	language = "javascript",
 	filename,
+	codeAreaClassName,
 }: CodeBlockClientProps) {
 	const [html, setHtml] = useState<string>("");
 
@@ -80,7 +83,10 @@ export function CodeBlockClient({
 				</div>
 			)}
 			<div
-				className="overflow-x-auto"
+				className={twMerge(
+					"min-w-0 overflow-y-auto overflow-x-hidden [&_pre]:min-w-max [&_pre]:w-fit [&_.shiki]:overflow-x-auto",
+					codeAreaClassName,
+				)}
 				// biome-ignore lint/security/noDangerouslySetInnerHtml: shiki output is safe
 				dangerouslySetInnerHTML={{ __html: html }}
 			/>

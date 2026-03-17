@@ -1,4 +1,5 @@
 import { createHighlighter, type Highlighter } from "shiki";
+import { twMerge } from "tailwind-merge";
 
 let highlighter: Highlighter | null = null;
 
@@ -39,6 +40,7 @@ export interface CodeBlockProps {
 	language?: string;
 	filename?: string;
 	showLineNumbers?: boolean;
+	codeAreaClassName?: string;
 }
 
 export async function CodeBlock({
@@ -46,6 +48,7 @@ export async function CodeBlock({
 	language = "javascript",
 	filename,
 	showLineNumbers = false,
+	codeAreaClassName,
 }: CodeBlockProps) {
 	const hl = await getHighlighterInstance();
 	const html = hl.codeToHtml(code, {
@@ -54,7 +57,16 @@ export async function CodeBlock({
 	});
 
 	const lines = code.split("\n");
-	const htmlLines = html.match(/<span class="line">([\s\S]*?)<\/span>/g) || [];
+	const lineOccurrences = new Map<string, number>();
+	const numberedLines = lines.map((line, index) => {
+		const occurrence = (lineOccurrences.get(line) ?? 0) + 1;
+		lineOccurrences.set(line, occurrence);
+
+		return {
+			key: `${line}-${occurrence}`,
+			lineNumber: index + 1,
+		};
+	});
 
 	return (
 		<div className="rounded-none border border-border-primary bg-bg-input overflow-hidden font-[family-name:var(--font-jetbrains-mono)] text-xs">
@@ -67,21 +79,23 @@ export async function CodeBlock({
 					{filename && <span className="text-text-tertiary">{filename}</span>}
 				</div>
 			)}
-			<div className="flex overflow-auto">
+			<div
+				className={twMerge("flex min-w-0 overflow-y-auto", codeAreaClassName)}
+			>
 				{showLineNumbers && (
 					<div className="flex flex-col items-end gap-0 border-r border-border-primary bg-bg-surface px-3 py-3 min-w-[40px]">
-						{lines.map((_, i) => (
+						{numberedLines.map(({ key, lineNumber }) => (
 							<span
-								key={i}
+								key={key}
 								className="font-[family-name:var(--font-jetbrains-mono)] text-xs leading-[18px] text-text-tertiary h-[18px]"
 							>
-								{i + 1}
+								{lineNumber}
 							</span>
 						))}
 					</div>
 				)}
 				<div
-					className="flex-1 overflow-x-auto p-3"
+					className="min-w-0 flex-1 overflow-x-auto p-3 [&_pre]:min-w-max [&_pre]:w-fit"
 					// biome-ignore lint/security/noDangerouslySetInnerHtml: shiki output is safe
 					dangerouslySetInnerHTML={{ __html: html }}
 				/>

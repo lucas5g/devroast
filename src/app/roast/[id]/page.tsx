@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
+import { CodeViewer } from "@/components/code-editor";
 import { ShareButton } from "@/components/share-button";
-import { CodeBlock } from "@/components/ui/code-block";
 import { ScoreRing } from "@/components/ui/score-ring";
 import { createCaller } from "@/trpc/server";
 
@@ -92,13 +92,7 @@ export default async function RoastResultPage({
 						</span>
 					</div>
 
-					<div className="h-[300px] overflow-hidden rounded border border-border-primary bg-bg-input">
-						<CodeBlock
-							code={data.code}
-							language={data.language}
-							showLineNumbers={true}
-						/>
-					</div>
+					<CodeViewer code={data.code} language={data.language} />
 				</section>
 
 				{/* Divider */}
