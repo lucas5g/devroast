@@ -5,6 +5,15 @@ import { codeSubmissions, roastFixes, roastIssues, roasts } from "@/db/schema";
 import { generateRoast } from "@/lib/llm";
 import { baseProcedure, createTRPCRouter } from "../init";
 
+function escapeJsonString(str: string): string {
+	return str
+		.replace(/\\/g, "\\\\")
+		.replace(/"/g, '\\"')
+		.replace(/\n/g, "\\n")
+		.replace(/\r/g, "\\r")
+		.replace(/\t/g, "\\t");
+}
+
 export const appRouter = createTRPCRouter({
 	metrics: baseProcedure.query(async () => {
 		try {
@@ -54,6 +63,7 @@ export const appRouter = createTRPCRouter({
 				...e,
 				rank: idx + 1,
 				score: Number(e.score),
+				code: escapeJsonString(e.code ?? ""),
 				createdAt: e.createdAt?.toISOString() ?? new Date().toISOString(),
 			}));
 			const totalCount = Number(countResult[0]?.count ?? 0);
@@ -111,7 +121,7 @@ export const appRouter = createTRPCRouter({
 					roastTitle: roastResult.roastText,
 					language: roastResult.language,
 					lines,
-					code: roastResult.code,
+					code: escapeJsonString(roastResult.code ?? ""),
 					issues: issues.map((i) => ({
 						type: i.type,
 						title: i.title,
@@ -150,6 +160,7 @@ export const appRouter = createTRPCRouter({
 				...e,
 				rank: idx + 1,
 				score: Number(e.score),
+				code: escapeJsonString(e.code ?? ""),
 			}));
 			const totalCount = Number(countResult[0]?.count ?? 0);
 
@@ -218,7 +229,7 @@ export const appRouter = createTRPCRouter({
 
 			return {
 				id: roast.id,
-				code,
+				code: escapeJsonString(code),
 				language: detectedLanguage,
 				roastMode,
 				score: llmResponse.score,
