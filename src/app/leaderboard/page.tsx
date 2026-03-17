@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createCaller } from "@/trpc/server";
 
 export const metadata = {
@@ -56,6 +57,7 @@ function LeaderboardEntry({
 	entry,
 }: {
 	entry: {
+		id: string;
 		rank: number;
 		score: number;
 		language: string;
@@ -67,43 +69,45 @@ function LeaderboardEntry({
 	const date = new Date(entry.createdAt).toISOString().split("T")[0];
 
 	return (
-		<div className="flex flex-col rounded border border-border-primary">
-			<div className="flex h-12 items-center justify-between border-b border-border-primary px-5">
-				<div className="flex items-center gap-4">
-					<span className="font-[family-name:var(--font-jetbrains-mono)] text-sm font-bold text-text-tertiary">
-						#{entry.rank}
-					</span>
-					<span className="font-[family-name:var(--font-jetbrains-mono)] text-xs text-text-tertiary">
-						/
-					</span>
-					<span className="font-[family-name:var(--font-jetbrains-mono)] text-sm font-bold text-accent-red">
-						{entry.score.toFixed(1)}/10
-					</span>
-				</div>
-				<div className="flex items-center gap-3">
-					<span className="font-[family-name:var(--font-jetbrains-mono)] text-xs text-text-secondary uppercase">
-						{entry.language}
-					</span>
-					<span className="font-[family-name:var(--font-jetbrains-mono)] text-xs text-text-tertiary">
-						{date}
-					</span>
-				</div>
-			</div>
-			<div className="flex h-[120px] overflow-hidden bg-bg-input">
-				<div className="flex flex-col items-end gap-[6px] border-r border-border-primary bg-bg-surface px-[10px] py-3 pr-3">
-					{lines.map((line, i) => (
-						<span
-							key={`${entry.rank}-${line}`}
-							className="font-[family-name:var(--font-jetbrains-mono)] text-xs leading-[18px] text-text-tertiary"
-						>
-							{i + 1}
+		<Link href={`/roast/${entry.id}`} className="block">
+			<div className="flex flex-col rounded border border-border-primary transition-colors hover:border-accent-red">
+				<div className="flex h-12 items-center justify-between border-b border-border-primary px-5">
+					<div className="flex items-center gap-4">
+						<span className="font-[family-name:var(--font-jetbrains-mono)] text-sm font-bold text-text-tertiary">
+							#{entry.rank}
 						</span>
-					))}
+						<span className="font-[family-name:var(--font-jetbrains-mono)] text-xs text-text-tertiary">
+							/
+						</span>
+						<span className="font-[family-name:var(--font-jetbrains-mono)] text-sm font-bold text-accent-red">
+							{entry.score.toFixed(1)}/10
+						</span>
+					</div>
+					<div className="flex items-center gap-3">
+						<span className="font-[family-name:var(--font-jetbrains-mono)] text-xs text-text-secondary uppercase">
+							{entry.language}
+						</span>
+						<span className="font-[family-name:var(--font-jetbrains-mono)] text-xs text-text-tertiary">
+							{date}
+						</span>
+					</div>
 				</div>
-				<pre className="flex-1 overflow-x-auto p-4 font-[family-name:var(--font-jetbrains-mono)] text-xs leading-[18px] text-text-secondary">
-					<code>{entry.code}</code>
-				</pre>
+				<div className="flex h-[120px] overflow-hidden bg-bg-input">
+					<div className="flex flex-col items-end gap-[6px] border-r border-border-primary bg-bg-surface px-[10px] py-3 pr-3">
+						{lines.map((line, i) => (
+							<span
+								key={`${entry.rank}-${line}`}
+								className="font-[family-name:var(--font-jetbrains-mono)] text-xs leading-[18px] text-text-tertiary"
+							>
+								{i + 1}
+							</span>
+						))}
+					</div>
+					<pre className="flex-1 overflow-x-auto p-4 font-[family-name:var(--font-jetbrains-mono)] text-xs leading-[18px] text-text-secondary">
+						<code>{entry.code}</code>
+					</pre>
+				</div>
 			</div>
-		</div>
+		</Link>
 	);
 }

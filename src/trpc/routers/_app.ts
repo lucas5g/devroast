@@ -31,6 +31,7 @@ export const appRouter = createTRPCRouter({
 			const [entriesResult, countResult] = await Promise.all([
 				db
 					.select({
+						id: roasts.id,
 						rank: sql`row_number() over (order by ${roasts.score} desc)`.as(
 							"rank",
 						),
